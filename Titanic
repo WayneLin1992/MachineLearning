@@ -84,6 +84,31 @@ classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = [
 
 classifier.fit(df_1, y, batch_size = 800, epochs = 500)
 
+### XGBOOST
+
+from xgboost import XGBClassifier
+classifier_xgboost = XGBClassifier()
+classifier_xgboost.fit(df_1, y)
+### score of xgboost
+accuracies = []
+from sklearn.model_selection import cross_val_score
+xgboost_accuracies = cross_val_score(estimator = classifier_xgboost, X = df_1, y = y, cv = 10)
+xgboost = xgboost_accuracies.mean()
+xgboost_accuracies.std()
+accuracies.append(xgboost)
+
+
+### RandomForest
+from sklearn.ensemble import RandomForestClassifier
+classifier_RandomForest = RandomForestClassifier(n_estimators = 500, criterion = 'entropy', random_state = 0 )
+classifier_RandomForest.fit(df_1, y)
+
+### score of RandomForest
+RandomForest_accuracies = cross_val_score(estimator = classifier_RandomForest, X = df_1, y = y, cv = 10)
+RandomForest = RandomForest_accuracies.mean()
+RandomForest_accuracies.std()
+accuracies.append(RandomForest)
+
 # test processing 
 dataset_test = pd.read_csv("test.csv")
 dataset_answer = pd.read_csv("gender_submission.csv")
@@ -107,8 +132,12 @@ df_test['FamilySize'] = df_test['SibSp'] + df_test['Parch'] + 1
 df_2=df_test[['Pclass', 'Sex', 'Age', 'Fare','Embarked', 'Deck', 'FamilySize']].copy()
 df_2 = df_2.values
 df_2 = sc.transform(df_2)
-
+### 由xgboost, randomForest and ANN predict
 y_pred = classifier.predict(df_2)
+y_pred_xgboost = classifier_xgboost.predict(df_2)
+y_pred_RandomForest = classifier_RandomForest.predict(df_2)
+
+
 new_y_pred = []
 for var in y_pred:
     if var >0.5:
@@ -118,7 +147,10 @@ for var in y_pred:
 # confusion matrix to answer
 from sklearn.metrics import confusion_matrix
 y_pred = y_pred > 0.5
-cm = confusion_matrix(y_test, y_pred)
+### different style of confusion matrix
+cm_xgboost = confusion_matrix(y_test, y_pred_xgboost)
+cm_RandomForest = confusion_matrix(y_test, y_pred_RandomForest) 
+cm_ANN = confusion_matrix(y_test, y_pred)
 
 # Backward Elimination
 #import statsmodels.api as sm
