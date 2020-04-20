@@ -16,8 +16,7 @@ plt.show()
 X_train = np.expand_dims(X_train, -1)
 
 
-from sklearn.model_selection import train_test_split
-X_train, X_val, Y_train, Y_val = train_test_split(X_train, Y_train, test_size = 0.1, random_state=2)
+
 
 dataset_test = pd.read_csv("test.csv")
 dataset_answer = pd.read_csv("sample_submission.csv")
@@ -63,6 +62,7 @@ model.compile(loss='sparse_categorical_crossentropy',
               optimizer=Adam(0.0001), 
               metrics=['accuracy'])
 
+r = model.fit(X_train, Y_train, epochs=10)
 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 datagen = ImageDataGenerator(
@@ -71,40 +71,40 @@ datagen = ImageDataGenerator(
         featurewise_std_normalization=False,  # divide inputs by std of the dataset
         samplewise_std_normalization=False,  # divide each input by its std
         zca_whitening=False,  # dimesion reduction
-        rotation_range=0.5,  # randomly rotate images in the range 5 degrees
-        zoom_range = 0.5, # Randomly zoom image 5%
-        width_shift_range=0.5,  # randomly shift images horizontally 5%
-        height_shift_range=0.5,  # randomly shift images vertically 5%
+        rotation_range=0.2,  # randomly rotate images in the range 2 degrees
+        zoom_range = 0.2, # Randomly zoom image 2%
+        width_shift_range=0.2,  # randomly shift images horizontally 2%
+        height_shift_range=0.2,  # randomly shift images vertically 2%
         horizontal_flip=False,  # randomly flip images
         vertical_flip=False)  # randomly flip images
-
 
 datagen.fit(X_train)
 batch_size = 150
 epochs = 10
-history = model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
-                    steps_per_epoch=len(X_train) /150, epochs=epochs,validation_data = (X_val,Y_val))
-
-plt.plot(history.history['val_loss'], color='r')
+r.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
+                    steps_per_epoch=len(X_train) /150, epochs=epochs)
 
 
-Y_pred = model.predict(X_val)
-# Convert predictions classes to one hot vectors 
-Y_pred_classes = np.argmax(Y_pred,axis = 1) 
-# Convert validation observations to one hot vectors
-Y_true = np.argmax(Y_val,axis = 1) 
-# compute the confusion matrix
-from sklearn.metrics import confusion_matrix
-confusion_mtx = confusion_matrix(Y_val, Y_pred_classes) 
-# plot the confusion matrix
-f,ax = plt.subplots(figsize=(8, 8))
-sns.heatmap(confusion_mtx, annot=True, cmap="Greens",linecolor="gray", fmt= '.1f')
-plt.xlabel("Predicted Label")
-plt.ylabel("True Label")
-plt.title("Confusion Matrix")
-plt.show()
+#plt.plot(history.history, color='r')
 
-y_pred = model.predict(df_test)
+
+#Y_pred = model.predict(X_val)
+## Convert predictions classes to one hot vectors 
+#Y_pred_classes = np.argmax(Y_pred,axis = 1) 
+## Convert validation observations to one hot vectors
+#Y_true = np.argmax(Y_val,axis = 1) 
+## compute the confusion matrix
+#from sklearn.metrics import confusion_matrix
+#confusion_mtx = confusion_matrix(Y_val, Y_pred_classes) 
+## plot the confusion matrix
+#f,ax = plt.subplots(figsize=(8, 8))
+#sns.heatmap(confusion_mtx, annot=True, cmap="Greens",linecolor="gray", fmt= '.1f')
+#plt.xlabel("Predicted Label")
+#plt.ylabel("True Label")
+#plt.title("Confusion Matrix")
+#plt.show()
+r.model.save("Digit.h5")
+y_pred = r.model.predict(df_test)
 y_pred = np.argmax(y_pred, axis=1)
 result = pd.DataFrame(data = {'ImageId':x_test, 'Label':y_pred})
-result.to_csv("Submission2.csv", index=False)
+result.to_csv("Submission.csv", index=False)
