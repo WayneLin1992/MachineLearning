@@ -1,0 +1,56 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+dataset = pd.read_csv("labeledTrainData.tsv",delimiter = '\t')
+y_train = dataset.iloc[:,1].values
+
+import re
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+corpus = []
+for i in range(0, 25000):
+    review = re.sub('[^a-zA-Z]', ' ', dataset['review'][i])
+    review = review.lower()
+    review = review.split()
+    ps = PorterStemmer()
+    review = [ps.stem(word) for word in review if not word in set(stopwords.words('english'))]
+    review = ' '.join(review)
+    corpus.append(review)
+    
+from sklearn.feature_extraction.text import CountVectorizer
+cv = CountVectorizer(max_features = 1500)
+X_train = cv.fit_transform(corpus).toarray()
+
+from sklearn.naive_bayes import GaussianNB
+classifier = GaussianNB()
+classifier.fit(X_train, y_train)
+
+dataset_test = pd.read_csv("testData.tsv",delimiter = '\t')
+import re
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+corpus_test = []
+for i in range(0, 25000):
+    review = re.sub('[^a-zA-Z]', ' ', dataset['review'][i])
+    review = review.lower()
+    review = review.split()
+    ps = PorterStemmer()
+    review = [ps.stem(word) for word in review if not word in set(stopwords.words('english'))]
+    review = ' '.join(review)
+    corpus_test.append(review)
+from sklearn.feature_extraction.text import CountVectorizer
+cv = CountVectorizer(max_features = 1500)
+X_test = cv.fit_transform(corpus_test).toarray()
+
+y_pred = classifier.predict(X_test)
+
+dataset_answer = pd.read_csv("sampleSubmission.csv")
+#id = dataset_answer.iloc[:,0]
+
+result = pd.DataFrame(data = {'id':dataset_answer['id'], 'sentiment':y_pred})
+result.to_csv("Submission.csv", index=False)
