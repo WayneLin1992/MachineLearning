@@ -1,0 +1,91 @@
+###weather_report web crawler
+from bs4 import BeautifulSoup
+import requests
+import xlwings as xw
+import pandas as pd
+temp_taipei = []
+temp_north_taiwan = []
+disctip_north_taiwan = []
+disctip_taipei = []
+date = []
+res = requests.get("https://weather.sina.com.tw/tw_week.shtml")
+#res.text
+html = BeautifulSoup(res.text, 'html.parser')
+# find a week
+for d in range(1,8):
+    day = html.findAll("th")[d].text
+    date.append(day)
+### find the area
+taipei = str(html.findAll("td")[16].text)
+
+    
+### find the temp and discrip in Taipei
+for i in range(17,24):
+    temp = html.findAll("td")[i]
+    temp_taipei.append(temp.text)
+    temp.find("img")["alt"]
+    disctip_taipei.append(temp.find("img")["alt"])
+### find the temp and discrip in north taiwan
+north_taiwan = str(html.findAll("td")[24].text)
+for i in range(25,32):
+    temp = html.findAll("td")[i]
+    temp_north_taiwan.append(temp.text)
+    temp.find("img")["alt"]
+    disctip_north_taiwan.append(temp.find("img")["alt"])
+### open the excel file
+wb = xw.Book(r"a_week_weather.xlsx")
+week_sheet = wb.sheets["a_week"]
+### enter the area
+week_sheet.range("A1").value = taipei
+week_sheet.range("B1").value = "最高溫"+"(°C)"
+week_sheet.range("C1").value = "最低溫"+"(°C)"
+## enter date , temp and discript in taipei
+for i,j in zip(range(2,9),range(0,7)):
+        week_sheet.range(f"B{i}").value = temp_taipei[j][3:5]
+        week_sheet.range(f"C{i}").value = temp_taipei[j][0:2]
+        week_sheet.range(f"D{i}").value = disctip_taipei[j]
+for p,z in zip(range(2,9), range(0,7)):
+        week_sheet.range(f"A{p}").value = date[z]
+## enter date and temp and discript in north taipei
+week_sheet.range("A10").value = north_taiwan
+for i,j in zip(range(11,18), range(0,7)):
+        week_sheet.range(f"B{i}").value = temp_north_taiwan[j][3:5]
+        week_sheet.range(f"C{i}").value = temp_north_taiwan[j][0:2]
+        week_sheet.range(f"D{i}").value = disctip_north_taiwan[j]
+for i,z in zip(range(11,18),range(0,7)):
+        week_sheet.range(f"A{i}").value = date[z]
+### mark raining day 
+for i in range(2,9):
+    if "雨" in week_sheet.range(f"D{i}").value:
+        week_sheet.range(f"D{i}").color = (255,0,0)
+    else:
+        pass
+for i in range(11,18):
+    if "雨" in week_sheet.range(f"D{i}").value:
+        week_sheet.range(f"D{i}").color = (255,0,0)
+    else:
+        pass
+### mark the cold day
+for i in range(2,9):
+    if week_sheet.range(f"C{i}").value < 15:
+        week_sheet.range(f"C{i}").color = (255,225,0)
+    else:
+        pass
+for i in range(11,18):
+    if week_sheet.range(f"C{i}").value < 15:
+        week_sheet.range(f"C{i}").color = (255,225,0)
+    else:
+        pass
+### watch out the daily temp change > 10 
+for i in range(2,9):
+    if (week_sheet.range(f"B{i}").value - week_sheet.range(f"C{i}").value) > 10:
+        week_sheet.range(f"B{i}").color = (0,225,0)
+    else:
+        pass
+for i in range(11,18):
+    if (week_sheet.range(f"B{i}").value - week_sheet.range(f"C{i}").value) > 10:
+        week_sheet.range(f"B{i}").color = (0,225,0)
+    else:
+        pass
+### save the file
+wb.save()  
